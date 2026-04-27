@@ -214,6 +214,83 @@ app.post('/api/bills', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+// =======================
+// PRESCRIPTIONS API
+// =======================
+app.get('/api/prescriptions', async (req, res) => {
+  const prescriptions = await prisma.prescription.findMany({
+    include: { patient: true, doctor: true, appointment: true },
+    orderBy: { date: 'desc' }
+  });
+  res.json(prescriptions);
+});
+
+app.post('/api/prescriptions', async (req, res) => {
+  try {
+    const data = req.body;
+    const newPrescription = await prisma.prescription.create({ data });
+    res.json(newPrescription);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// =======================
+// LAB REPORTS API
+// =======================
+app.get('/api/lab-reports', async (req, res) => {
+  const reports = await prisma.labReport.findMany({
+    include: { patient: true },
+    orderBy: { date: 'desc' }
+  });
+  res.json(reports);
+});
+
+app.post('/api/lab-reports', async (req, res) => {
+  try {
+    const data = req.body;
+    const newReport = await prisma.labReport.create({ data });
+    res.json(newReport);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// =======================
+// INVENTORY API
+// =======================
+app.get('/api/inventory', async (req, res) => {
+  const inventory = await prisma.inventory.findMany({
+    orderBy: { itemName: 'asc' }
+  });
+  res.json(inventory);
+});
+
+app.post('/api/inventory', async (req, res) => {
+  try {
+    const data = req.body;
+    if(data.expiryDate) data.expiryDate = new Date(data.expiryDate);
+    const newItem = await prisma.inventory.create({ data });
+    res.json(newItem);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/inventory/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = req.body;
+    if(data.expiryDate) data.expiryDate = new Date(data.expiryDate);
+    const updated = await prisma.inventory.update({
+      where: { id: parseInt(id) },
+      data
+    });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Serve
 app.listen(PORT, () => {

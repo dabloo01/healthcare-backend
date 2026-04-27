@@ -18,6 +18,8 @@ model Patient {
   createdAt    DateTime      @default(now())
   appointments Appointment[]
   bills        Bill[]
+  prescriptions Prescription[]
+  labReports    LabReport[]
 }
 
 model Doctor {
@@ -29,6 +31,7 @@ model Doctor {
   consultationFee Float         @default(500)
   createdAt       DateTime      @default(now())
   appointments    Appointment[]
+  prescriptions   Prescription[]
 }
 
 model Appointment {
@@ -40,8 +43,45 @@ model Appointment {
   doctorId        Int
   createdAt       DateTime @default(now())
 
+  patient      Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor       Doctor        @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  prescription Prescription?
+}
+
+model Prescription {
+  id            Int      @id @default(autoincrement())
+  medications   String   // JSON string or long text: "Aspirin 500mg, Paracetamol"
+  instructions  String?
+  date          DateTime @default(now())
+  appointmentId Int      @unique
+  patientId     Int
+  doctorId      Int
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  patient     Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor      Doctor      @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+}
+
+model LabReport {
+  id          Int      @id @default(autoincrement())
+  testName    String
+  result      String
+  status      String   @default("Completed") // Pending, Completed
+  date        DateTime @default(now())
+  patientId   Int
+
   patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  doctor  Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+}
+
+model Inventory {
+  id          Int      @id @default(autoincrement())
+  itemName    String
+  category    String   // Medicine, Equipment, Consumable
+  stock       Int
+  unit        String   // Tabs, Bottles, Pieces
+  expiryDate  DateTime?
+  price       Float
+  updatedAt   DateTime @updatedAt
 }
 
 model Bill {
@@ -58,9 +98,10 @@ model Bill {
 model User {
   id        Int      @id @default(autoincrement())
   name      String
-  role      String   @default("Hospital Admin") // Hospital Admin, Head Doctor, Receptionist
+  role      String   @default("Patient") // Admin, Doctor, Patient, Receptionist
   email     String?
   phone     String   @unique
   password  String
   createdAt DateTime @default(now())
 }
+
