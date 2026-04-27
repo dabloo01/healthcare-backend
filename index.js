@@ -138,7 +138,7 @@ app.get('/api/patients', async (req, res) => {
         orderBy: { date: 'desc' }
       }
     },
-    orderBy: { createdAt: 'desc' } 
+    orderBy: { id: 'desc' } 
   });
   res.json(patients);
 });
