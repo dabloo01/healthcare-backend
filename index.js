@@ -216,9 +216,7 @@ app.post('/api/bills', async (req, res) => {
 });
 
 // Serve
-if (process.env.NODE_ENV !== 'production') {
-  app.listen(PORT, () => {
-    console.log(`Backend server is running on http://localhost:${PORT}`);
-  });
-}
+app.listen(PORT, () => {
+  console.log(`Backend server is running on port ${PORT}`);
+});
 module.exports = app;
