@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Patient {
+  id           Int           @id @default(autoincrement())
+  name         String
+  email        String?
+  phone        String
+  age          Int?
+  gender       String?
+  address      String?
+  createdAt    DateTime      @default(now())
+  appointments Appointment[]
+  bills        Bill[]
+}
+
+model Doctor {
+  id              Int           @id @default(autoincrement())
+  name            String
+  specialty       String
+  phone           String
+  email           String?
+  consultationFee Float         @default(500)
+  createdAt       DateTime      @default(now())
+  appointments    Appointment[]
+}
+
+model Appointment {
+  id              Int      @id @default(autoincrement())
+  appointmentDate DateTime
+  status          String   @default("Scheduled") // Status: Scheduled, Completed, Cancelled
+  reason          String?
+  patientId       Int
+  doctorId        Int
+  createdAt       DateTime @default(now())
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor  Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+}
+
+model Bill {
+  id          Int      @id @default(autoincrement())
+  amount      Float
+  status      String   @default("Unpaid") // Status: Paid, Unpaid
+  date        DateTime @default(now())
+  description String?
+  patientId   Int
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  role      String   @default("Hospital Admin") // Hospital Admin, Head Doctor, Receptionist
+  email     String?
+  phone     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+}
