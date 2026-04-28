@@ -3,6 +3,7 @@ const cors = require('cors');
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
 const app = express();
 const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
@@ -123,6 +124,89 @@ app.post('/api/auth/login', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+app.post('/api/auth/forgot-password', async (req, res) => {
+  try {
+    const { phone } = req.body;
+    const user = await prisma.user.findUnique({ where: { phone } });
+    if (!user) {
+      return res.status(404).json({ error: 'User with this phone number not found.' });
+    }
+
+    // Generate 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+
+    await prisma.user.update({
+      where: { phone },
+      data: { resetOtp: otp, resetOtpExpiry: expiry }
+    });
+
+    // Send SMS via Fast2SMS
+    const apiKey = process.env.FAST2SMS_API_KEY;
+    if (apiKey) {
+      const url = `https://www.fast2sms.com/dev/bulkV2?authorization=${apiKey}&variables_values=${otp}&route=otp&numbers=${phone}`;
+      await axios.get(url);
+    } else {
+      console.log(`[MOCK SMS] OTP for ${phone} is: ${otp}`);
+    }
+
+    res.json({ message: 'OTP sent successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/auth/verify-otp', async (req, res) => {
+  try {
+    const { phone, otp } = req.body;
+    const user = await prisma.user.findUnique({ where: { phone } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    if (user.resetOtp !== otp) {
+      return res.status(400).json({ error: 'Invalid OTP.' });
+    }
+
+    if (new Date() > new Date(user.resetOtpExpiry)) {
+      return res.status(400).json({ error: 'OTP has expired.' });
+    }
+
+    res.json({ message: 'OTP verified successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/auth/reset-password', async (req, res) => {
+  try {
+    const { phone, otp, newPassword } = req.body;
+    const user = await prisma.user.findUnique({ where: { phone } });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    if (user.resetOtp !== otp) {
+      return res.status(400).json({ error: 'Invalid or expired OTP session.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { phone },
+      data: { 
+        password: hashedPassword,
+        resetOtp: null,
+        resetOtpExpiry: null
+      }
+    });
+
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 // =======================
 // PATIENTS API

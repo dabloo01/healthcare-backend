@@ -96,12 +96,14 @@ model Bill {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  role      String   @default("Patient") // Admin, Doctor, Patient, Receptionist
-  email     String?
-  phone     String   @unique
-  password  String
-  createdAt DateTime @default(now())
+  id              Int       @id @default(autoincrement())
+  name            String
+  role            String    @default("Patient") // Admin, Doctor, Patient, Receptionist
+  email           String?
+  phone           String    @unique
+  password        String
+  resetOtp        String?
+  resetOtpExpiry  DateTime?
+  createdAt       DateTime  @default(now())
 }
 
