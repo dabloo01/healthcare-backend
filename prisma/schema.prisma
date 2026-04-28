@@ -107,3 +107,13 @@ model User {
   createdAt       DateTime  @default(now())
 }
 
+model Bed {
+  id          Int       @id @default(autoincrement())
+  bedNumber   String    // e.g. "101", "ICU-3"
+  ward        String    // General, ICU, Private, Emergency
+  status      String    @default("Available") // Available, Occupied
+  patientName String?
+  patientId   Int?
+  admittedAt  DateTime?
+  updatedAt   DateTime  @updatedAt
+}

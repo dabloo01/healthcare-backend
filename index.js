@@ -376,6 +376,65 @@ app.put('/api/inventory/:id', async (req, res) => {
   }
 });
 
+// =======================
+// BEDS API
+// =======================
+app.get('/api/beds', async (req, res) => {
+  try {
+    const beds = await prisma.bed.findMany({ orderBy: [{ ward: 'asc' }, { bedNumber: 'asc' }] });
+    res.json(beds);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/beds', async (req, res) => {
+  try {
+    const { bedNumber, ward } = req.body;
+    const newBed = await prisma.bed.create({ data: { bedNumber, ward } });
+    res.json(newBed);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/beds/:id/admit', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { patientName, patientId } = req.body;
+    const updated = await prisma.bed.update({
+      where: { id: parseInt(id) },
+      data: { status: 'Occupied', patientName, patientId: patientId || null, admittedAt: new Date() }
+    });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/beds/:id/discharge', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updated = await prisma.bed.update({
+      where: { id: parseInt(id) },
+      data: { status: 'Available', patientName: null, patientId: null, admittedAt: null }
+    });
+    res.json(updated);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/beds/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await prisma.bed.delete({ where: { id: parseInt(id) } });
+    res.json({ message: 'Bed deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Serve
 app.listen(PORT, () => {
   console.log(`Backend server is running on port ${PORT}`);
